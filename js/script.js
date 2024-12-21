@@ -95,6 +95,7 @@ class Obstacle extends Circle {
         if (this.number > 0) {
             let ctx = canvas.getContext("2d")
             ctx.beginPath()
+            ctx.lineWidth = "2"
             ctx.strokeStyle = `rgb(${this.red}, ${this.green}, ${this.blue})`
             ctx.arc(this.position.x, this.position.y, this.radius, 0, 2*Math.PI)
             ctx.stroke()
@@ -202,7 +203,6 @@ function reset() {
     canvas.width = w
 }
 
-
 let game, animationFrame
 
 function startGame() {
@@ -252,9 +252,11 @@ function startGame() {
 function drawArrow(x, y) {
     let ctx = canvas.getContext("2d")
     ctx.beginPath()
+    ctx.strokeStyle = "white"
+    ctx.lineWidth = "3"
+    ctx.lineCap = "round"
     ctx.moveTo(width/2, 20)
     ctx.lineTo(x, y)
-    ctx.strokeStyle = "white"
     ctx.stroke()
 }
 
@@ -265,7 +267,7 @@ function updateCanvas(game) {
     gameball.draw(game)
     game.obstacles.forEach(o => {
         o.draw(gameball)
-    });
+    })
     if (game.gameball.shootable)
         drawArrow(mouseX, mouseY)
 }
