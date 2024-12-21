@@ -48,18 +48,18 @@ h2#tries {
     margin: 0;
 }
 
-h2.fertig {
+h2.doneText {
     visibility: hidden;
     text-align: center;
     font-weight: 100;
     font-size: 1.1rem;
     margin: 0;
 }
-h2.fertig.done {
+h2.doneText.done {
     visibility: visible;
 }
 
-#fertigContainer, #titleContainer {
+#doneContainer, #titleContainer {
     padding: 0 3rem 0 3rem;
     display: flex;
     justify-content: space-between;
@@ -71,7 +71,7 @@ h2.fertig.done {
     margin-bottom: 0.5rem;
 }
 
-#fertigContainer {
+#doneContainer {
     padding: 1rem 3rem 0.5rem 3rem;
 }
 

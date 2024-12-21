@@ -209,7 +209,7 @@ function startGame() {
     reset()
     gameover = false
 
-    document.querySelector("h2.fertig").className = "fertig"
+    document.querySelector("h2.doneText").className = "doneText"
     document.getElementById("tries").innerHTML = "Tries: 0"
 
     bounce = range.value / 100
@@ -280,7 +280,7 @@ function checkDone(game) {
         gameover = true
         context.fillStyle = "rgb(32, 32, 32)"
         context.fillRect(0, 0, width, height)
-        document.querySelector("h2.fertig").className = "fertig done"
+        document.querySelector("h2.doneText").className = "doneText done"
     }
 }
 
