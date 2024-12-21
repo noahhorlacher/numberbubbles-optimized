@@ -208,7 +208,7 @@ function startGame() {
     gameover = false
 
     document.querySelector("h2.fertig").className = "fertig"
-    document.getElementById("tries").innerHTML = "Versuche: 0"
+    document.getElementById("tries").innerHTML = "Tries: 0"
 
     bounce = range.value / 100
     gravity = rangeGravity.value / 100
@@ -242,7 +242,7 @@ function startGame() {
             game.gameball.shootable = false
             game.gameball.speed.x = (mouseX - (width / 2)) / 10
             game.gameball.speed.y = (mouseY - 20) / 10
-            document.getElementById("tries").innerText = `Versuche: ${++game.tries}`
+            document.getElementById("tries").innerText = `Tries: ${++game.tries}`
         }
     })
 }

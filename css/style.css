@@ -1,39 +1,78 @@
-body {
-    font-family: Arial, Helvetica, sans-serif;
-    text-align: center;
-    color: black;
-    user-select: none;
+html, body {
+    margin: 0;
+    background: black;
+    color: white;
 }
 
-button {
+body {
+    font-family: Helvetica, sans-serif;
+}
+
+#resetButton {
     background-color: cadetblue;
     border: none;
     color: white;
-    padding: 20px;
-    box-shadow: 2px 3px 5px gray;
+    padding: 5px 16px;
+    font-size: 1.1rem;
+    border-radius: 3px;
+    user-select: none;
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+#resetButton:hover {
+    opacity: 1;
 }
 
 canvas {
-    box-shadow: 2px 3px 5px gray;
-    display: inline-block;
+    display: block;
+    margin: 1rem auto 2rem auto;
+    border-radius: 7px;
     background-color: rgb(32, 32, 32);
 }
 
+h1 {
+    font-size: 1.3rem;
+    font-weight: 100;
+    letter-spacing: 0.03rem;
+    text-align: center;
+    margin: 0;
+}
+
+h2#tries {
+    font-size: 1.2rem;
+    letter-spacing: 0.04rem;
+    margin: 0;
+}
+
 h2.fertig {
-    opacity: 0;
+    visibility: hidden;
+    text-align: center;
+    font-weight: 100;
+    font-size: 1.1rem;
+    margin: 0;
+}
+h2.fertig.done {
+    visibility: visible;
 }
 
-.done {
-    animation-name: done;
-    animation-duration: 1000ms;
-    animation-fill-mode: forwards;
+#fertigContainer, #titleContainer {
+    padding: 0 3rem 0 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-@keyframes done {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+#titleContainer {
+    padding: 0rem 3rem 0.5rem 3rem;
+    margin-bottom: 0.5rem;
+}
+
+#fertigContainer {
+    padding: 1rem 3rem 0.5rem 3rem;
+}
+
+.sliderContainer {
+    text-align: center;
+    margin: 0.5rem 0;
 }
