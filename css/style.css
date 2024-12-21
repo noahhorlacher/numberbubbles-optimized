@@ -5,23 +5,26 @@ html, body {
 }
 
 body {
+    padding-bottom: 2rem;
+}
+
+body {
     font-family: Helvetica, sans-serif;
 }
 
 #resetButton {
-    background-color: cadetblue;
-    border: none;
+    border: white solid 2px;
     color: white;
     padding: 5px 16px;
     font-size: 1.1rem;
     border-radius: 3px;
     user-select: none;
-    opacity: 0.8;
     cursor: pointer;
 }
 
 #resetButton:hover {
-    opacity: 1;
+    background-color: white;
+    color: black;
 }
 
 canvas {

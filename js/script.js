@@ -9,6 +9,8 @@ let bounce = 0.8
 let bounceValueElement = document.getElementById("bounceValue")
 let gravityValueElement = document.getElementById("gravityValue")
 
+document.getElementById('resetButton').addEventListener('click', startGame)
+
 class Game {
     constructor(amountObstacles) {
         this.obstacles = []
