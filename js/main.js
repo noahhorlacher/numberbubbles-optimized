@@ -1,295 +1,355 @@
+// Canvas setup
+const canvas = document.querySelector('#gameCanvas');
+const context = canvas.getContext('2d');
+const width = canvas.getAttribute('width');
+const height = canvas.getAttribute('height');
 
-const canvas = document.querySelector('#gameCanvas')
-const context = canvas.getContext('2d')
+// Game configuration
+const BALL_RADIUS = 20;
+const BORDER_LIMIT = 620;
+const NUM_OBSTACLES = 15;
+const SHOOT_SPEED_DIVISOR = 10;
+const BACKGROUND_COLOR = 'rgb(32, 32, 32)'
+const MINIMUM_OBSTACLE_RADIUS = 20
 
-const width = canvas.getAttribute('width')
-const height = canvas.getAttribute('height')
+// Game state
+let gravity = 0.2;
+let bounce = 0.8;
+let gameover = false;
+let game;
+let animationFrame;
 
-let gravity = 0.2
-let bounce = 0.8
-let gameover = false
-const mousePosition = {
-    x: 0,
-    y: 0
-}
+// UI elements
+const mousePosition = { x: 0, y: 0 };
+const bounceValueElement = document.querySelector('#bounceValue');
+const gravityValueElement = document.querySelector('#gravityValue');
+const bounceRange = document.querySelector('#bounce');
+const gravityRange = document.querySelector('#gravity');
+const triesElement = document.getElementById('tries');
+const doneTextElement = document.querySelector('h2.doneText');
 
-const bounceValueElement = document.querySelector('#bounceValue')
-const gravityValueElement = document.querySelector('#gravityValue')
+// Event listeners
+document.getElementById('resetButton').addEventListener('click', startGame);
+bounceValueElement.innerText = `${bounceRange.value}%`;
+gravityValueElement.innerText = `${gravityRange.value}%`;
 
-document.getElementById('resetButton').addEventListener('click', startGame)
-
-class Game {
-    constructor(amountObstacles) {
-        this.obstacles = []
-        this.gameball = new GameBall()
-        this.tries = 0
-
-        for (let i = 0; i < amountObstacles; i++) {
-            let r = Math.floor(Math.random() * 200 + 55)
-            let g = Math.floor(Math.random() * 200 + 55)
-            let b = Math.floor(Math.random() * 200 + 55)
-            let radius = 20 + Math.random() * 50
-            let obstacle = new Obstacle(radius + Math.random() * (width- (2 * radius)), 80 + radius + Math.random() * (height - (2 * radius) - 80), radius, r, g, b)
-            obstacle.draw(this.gameball)
-            this.obstacles.push(obstacle)
-        }
-    }
-
-    checkOverlap(obstacle) {
-        if (this.obstacles.length > 1) {
-            this.obstacles.forEach(o => {
-                if (Math.sqrt(Math.pow(o.position.y-obstacle.position.y, 2) + Math.pow(o.position.x-obstacle.position.x, 2)) < o.radius + obstacle.radius && o != obstacle) {
-                    const angle = Math.atan2(o.position.y-obstacle.position.y, o.position.x-obstacle.position.x)
-                    o.position.rotate(true, angle)
-                    obstacle.position.rotate(true, angle)
-
-                    const overlap = o.radius + obstacle.radius - Math.sqrt(Math.pow(o.position.y-obstacle.position.y, 2)+Math.pow(o.position.x-obstacle.position.x, 2))
-                    if (o.position.x > obstacle.position.x) {
-                        o.position.x += overlap/2
-                        obstacle.position.x -= overlap/2
-                    } else {
-                        o.position.x -= overlap/2
-                        obstacle.position.x += overlap/2
-                    }
-
-                    o.position.rotate(false, angle)
-                    obstacle.position.rotate(false, angle)
-                }
-            })
-        }
-    }
-}
-
+// Vector class for position and velocity calculations
 class Vector {
     constructor(x, y) {
-        this.x = x
-        this.y = y
+        this.x = x;
+        this.y = y;
     }
 
     rotate(forward, angle) {
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        
         if (forward) {
-            let x = this.x * Math.cos(angle) + this.y*Math.sin(angle)
-            let y = this.y * Math.cos(angle) - this.x*Math.sin(angle)
-            this.x = x
-            this.y = y
+            const x = this.x * cos + this.y * sin;
+            const y = this.y * cos - this.x * sin;
+            this.x = x;
+            this.y = y;
         } else {
-            let x = this.x * Math.cos(angle) - this.y*Math.sin(angle)
-            let y = this.y * Math.cos(angle) + this.x*Math.sin(angle)
-            this.x = x
-            this.y = y
+            const x = this.x * cos - this.y * sin;
+            const y = this.y * cos + this.x * sin;
+            this.x = x;
+            this.y = y;
         }
     }
 }
 
+// Base circle class for game objects
 class Circle {
     constructor(x, y, radius) {
-        this.position = new Vector(x, y)
-        this.radius = radius
+        this.position = new Vector(x, y);
+        this.radius = radius;
     }
 }
 
+// Obstacle class for targets
 class Obstacle extends Circle {
     constructor(x, y, radius, r, g, b) {
-        super(x, y, radius)
-        this.number = 10
-        this.red = r
-        this.green = g
-        this.blue = b
-
+        super(x, y, radius);
+        this.number = 10;
+        this.color = { r, g, b };
     }
 
     draw(ball) {
-        if (this.number > 0) {
-            let ctx = canvas.getContext("2d")
-            ctx.beginPath()
-            ctx.lineWidth = "2"
-            ctx.strokeStyle = `rgb(${this.red}, ${this.green}, ${this.blue})`
-            ctx.arc(this.position.x, this.position.y, this.radius, 0, 2*Math.PI)
-            ctx.stroke()
-            ctx.fillStyle = `rgb(${this.red}, ${this.green}, ${this.blue})`
-            ctx.font = (this.radius/2) + "px Arial"
-            const fontOffset = this.number.toString().length > 1 ? this.radius/6 : this.radius/3
-            ctx.fillText(this.number, this.position.x - this.radius/2 + fontOffset, this.position.y + this.radius/6)
-            this.checkBallCollision(ball)
-        }
+        if (this.number <= 0) return;
+
+        // Draw obstacle circle
+        context.beginPath();
+        context.lineWidth = 2;
+        context.strokeStyle = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
+        context.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI);
+        context.stroke();
+
+        // Draw number inside obstacle
+        context.fillStyle = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
+        context.font = `${this.radius/2}px Arial`;
+        const fontOffset = this.number.toString().length > 1 ? this.radius/6 : this.radius/3;
+        context.fillText(this.number, this.position.x - this.radius/2 + fontOffset, this.position.y + this.radius/6);
+
+        this.checkBallCollision(ball);
     }
 
     checkBallCollision(ball) {
-        const distance = Math.sqrt(Math.pow(ball.position.x - this.position.x, 2) + Math.pow(ball.position.y - this.position.y, 2))
+        const distance = getDistance(ball.position, this.position);
+        
         if (distance < ball.radius + this.radius) {
-            let overlap = ball.radius + this.radius - distance
-            let angle = Math.atan2((ball.position.y-this.position.y), (ball.position.x-this.position.x))
-            ball.position.rotate(true, angle)
-            this.position.rotate(true, angle)
-            ball.speed.rotate(true, angle)
-
-            if (ball.position.x > this.position.x) ball.position.x += overlap
-            else ball.position.x -= overlap
-
-            ball.speed.x = -ball.speed.x*bounce
-
-            ball.position.rotate(false, angle)
-            this.position.rotate(false, angle)
-            ball.speed.rotate(false, angle)
-            this.number--
+            this.handleCollision(ball, distance);
+            this.number--;
         }
+    }
+
+    handleCollision(ball, distance) {
+        const overlap = ball.radius + this.radius - distance;
+        const angle = Math.atan2(ball.position.y - this.position.y, ball.position.x - this.position.x);
+
+        // Rotate positions and velocity for collision calculation
+        ball.position.rotate(true, angle);
+        this.position.rotate(true, angle);
+        ball.speed.rotate(true, angle);
+
+        // Adjust positions to prevent overlap
+        ball.position.x += ball.position.x > this.position.x ? overlap : -overlap;
+        ball.speed.x = -ball.speed.x * bounce;
+
+        // Rotate back
+        ball.position.rotate(false, angle);
+        this.position.rotate(false, angle);
+        ball.speed.rotate(false, angle);
     }
 }
 
+// Ball class for player-controlled object
 class GameBall extends Circle {
     constructor() {
-        let radius = 20
-        super(width/2, radius, radius)
-        this.speed = new Vector(0, 0)
-        this.shootable = true
+        super(width/2, BALL_RADIUS, BALL_RADIUS);
+        this.speed = new Vector(0, 0);
+        this.shootable = true;
     }
 
     draw(game) {
-        let ctx = canvas.getContext("2d")
-        ctx.beginPath()
-        ctx.fillStyle = "cadetblue"
-        ctx.arc(this.position.x, this.position.y, this.radius, 0, 2*Math.PI)
-        ctx.fill()
-        this.move(game)
+        context.beginPath();
+        context.fillStyle = "cadetblue";
+        context.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI);
+        context.fill();
+        this.update(game);
     }
 
-    move(game) {
+    update(game) {
         if (this.shootable) {
-            this.position.x = width/2
-            this.position.y = this.radius
-            this.speed.x = 0
-            this.speed.y = 0
+            this.resetPosition();
         } else {
-            this.position.x += this.speed.x
-            this.position.y += this.speed.y
-            this.speed.y += gravity
+            this.applyPhysics();
+            this.handleBoundaryCollisions();
         }
 
-        if (this.position.x > width - this.radius) {
-            this.position.x = width - this.radius
-            this.speed.x = -this.speed.x*bounce
+        if (this.position.y > BORDER_LIMIT) {
+            this.shootable = true;
+            checkGameCompletion(game);
         }
-        if (this.position.x < this.radius) {
-            this.position.x = this.radius
-            this.speed.x = -this.speed.x*bounce
+    }
+
+    resetPosition() {
+        this.position.x = width/2;
+        this.position.y = this.radius;
+        this.speed.x = 0;
+        this.speed.y = 0;
+    }
+
+    applyPhysics() {
+        this.position.x += this.speed.x;
+        this.position.y += this.speed.y;
+        this.speed.y += gravity;
+    }
+
+    handleBoundaryCollisions() {
+        // Horizontal boundaries
+        if (this.position.x > width - this.radius || this.position.x < this.radius) {
+            this.position.x = this.position.x > width - this.radius ? width - this.radius : this.radius;
+            this.speed.x = -this.speed.x * bounce;
         }
+        
+        // Top boundary
         if (this.position.y < this.radius) {
-            this.position.y = this.radius
-            this.speed.y = -this.speed.y * bounce
-        }
-
-        let border = 620
-
-        if (this.position.y > border) {
-            this.shootable = true
-            checkDone(game)
+            this.position.y = this.radius;
+            this.speed.y = -this.speed.y * bounce;
         }
     }
 }
 
-let range = document.querySelector('#bounce')
-bounceValueElement.innerText = range.value + '%'
+// Game class to manage overall game state
+class Game {
+    constructor(amountObstacles) {
+        this.obstacles = [];
+        this.gameball = new GameBall();
+        this.tries = 0;
+        this.createObstacles(amountObstacles);
+    }
 
-let rangeGravity = document.querySelector('#gravity')
-gravityValueElement.innerText = rangeGravity.value + '%'
+    createObstacles(amount) {
+        for (let i = 0; i < amount; i++) {
+            const color = {
+                r: Math.floor(Math.random() * 200 + 55),
+                g: Math.floor(Math.random() * 200 + 55),
+                b: Math.floor(Math.random() * 200 + 55)
+            };
+            const radius = MINIMUM_OBSTACLE_RADIUS + Math.random() * 50;
+            const x = radius + Math.random() * (width - (2 * radius));
+            const y = 80 + radius + Math.random() * (height - (2 * radius) - 80);
 
-function changeValue() {
-    bounceValueElement.innerText = range.value + '%'
-}
-
-function changeGravity() {
-    gravityValueElement.innerText = rangeGravity.value + '%'
-}
-
-function reset() {
-    context.fillStyle = 'rgb(32, 32, 32)'
-    context.fillRect(0, 0, width, height)
-    let w = width
-    canvas.width = 1
-    canvas.width = w
-}
-
-let game, animationFrame
-
-function startGame() {
-    reset()
-    gameover = false
-
-    document.querySelector('h2.doneText').className = 'doneText'
-    document.getElementById('tries').innerHTML = 'Tries: 0'
-
-    bounce = range.value / 100
-    gravity = rangeGravity.value / 100
-    game = new Game(15)
-
-    // Cancel any existing animation frame before starting a new game loop
-    if (animationFrame)
-        cancelAnimationFrame(animationFrame)
-
-    // Define the game loop
-    function gameLoop() {
-        if (!gameover) {
-            updateCanvas(game)  // Update the game state and canvas
-            animationFrame = requestAnimationFrame(gameLoop)  // Recursively call the gameLoop and store the ID
+            const obstacle = new Obstacle(x, y, radius, color.r, color.g, color.b);
+            obstacle.draw(this.gameball);
+            this.obstacles.push(obstacle);
+            this.checkObstacleOverlap(obstacle);
         }
     }
 
-    animationFrame = requestAnimationFrame(gameLoop)  // Start the game loop and store the ID
+    checkObstacleOverlap(obstacle) {
+        if (this.obstacles.length <= 1) return;
 
-    canvas.addEventListener('mousemove', e => {
-        let rect = e.target.getBoundingClientRect()
-        mousePosition.x = e.clientX - rect.left
-        mousePosition.y = e.clientY - rect.top
-    })
+        this.obstacles.forEach(other => {
+            if (other === obstacle) return;
 
-    canvas.addEventListener('click', e => {
-        if (!gameover && game.gameball.shootable) {
-            let rect = e.target.getBoundingClientRect()
-            mousePosition.x = e.clientX - rect.left
-            mousePosition.y = e.clientY - rect.top
-            game.gameball.shootable = false
-            game.gameball.speed.x = (mousePosition.x - (width / 2)) / 10
-            game.gameball.speed.y = (mousePosition.y - 20) / 10
-            document.getElementById('tries').innerText = `Tries: ${++game.tries}`
+            const distance = getDistance(other.position, obstacle.position);
+            if (distance < other.radius + obstacle.radius) {
+                this.resolveObstacleOverlap(other, obstacle, distance);
+            }
+        });
+    }
+
+    resolveObstacleOverlap(o1, o2, distance) {
+        const angle = Math.atan2(o1.position.y - o2.position.y, o1.position.x - o2.position.x);
+        const overlap = o1.radius + o2.radius - distance;
+
+        // Rotate, adjust positions, and rotate back
+        [o1.position, o2.position].forEach(pos => pos.rotate(true, angle));
+        
+        if (o1.position.x > o2.position.x) {
+            o1.position.x += overlap/2;
+            o2.position.x -= overlap/2;
+        } else {
+            o1.position.x -= overlap/2;
+            o2.position.x += overlap/2;
         }
-    })
+
+        [o1.position, o2.position].forEach(pos => pos.rotate(false, angle));
+    }
 }
 
-function drawArrow(x, y) {
-    let ctx = canvas.getContext('2d')
-    ctx.beginPath()
-    ctx.strokeStyle = 'white'
-    ctx.lineWidth = '3'
-    ctx.lineCap = 'round'
-    ctx.moveTo(width/2, 20)
-    ctx.lineTo(x, y)
-    ctx.stroke()
+// Utility functions
+function getDistance(pos1, pos2) {
+    return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
 }
 
 function updateCanvas(game) {
-    let gameball = game.gameball
-    context.fillStyle = 'rgb(32, 32, 32)'
-    context.fillRect(0, 0, width, height)
-    gameball.draw(game)
-    game.obstacles.forEach(o => {
-        o.draw(gameball)
-    })
-    if (game.gameball.shootable)
-        drawArrow(mousePosition.x, mousePosition.y)
-}
+    // Clear canvas
+    context.fillStyle = BACKGROUND_COLOR;
+    context.fillRect(0, 0, width, height);
 
-function checkDone(game) {
-    let done = true
-    game.obstacles.forEach(o => {
-        if (o.number > 0) done = false
-    })
+    // Draw game objects
+    game.gameball.draw(game);
+    game.obstacles.forEach(obstacle => obstacle.draw(game.gameball));
 
-    if (done) {
-        gameover = true
-        context.fillStyle = 'rgb(32, 32, 32)'
-        context.fillRect(0, 0, width, height)
-        document.querySelector('h2.doneText').className = 'doneText done'
+    // Draw aim arrow when ball is shootable
+    if (game.gameball.shootable) {
+        drawAimArrow(mousePosition.x, mousePosition.y);
     }
 }
 
-startGame()
+function drawAimArrow(x, y) {
+    context.beginPath();
+    context.strokeStyle = 'white';
+    context.lineWidth = 3;
+    context.lineCap = 'round';
+    context.moveTo(width/2, BALL_RADIUS);
+    context.lineTo(x, y);
+    context.stroke();
+}
+
+function checkGameCompletion(game) {
+    const allObstaclesCleared = game.obstacles.every(obstacle => obstacle.number <= 0);
+
+    if (allObstaclesCleared) {
+        gameover = true;
+        clearCanvas();
+        doneTextElement.className = 'doneText done';
+        game.gameball.shootable = false
+    }
+}
+
+function clearCanvas() {
+    context.fillStyle = BACKGROUND_COLOR;
+    context.fillRect(0, 0, width, height);
+}
+
+function resetCanvas() {
+    clearCanvas();
+    const w = width;
+    canvas.width = 1;
+    canvas.width = w;
+}
+
+// Game control functions
+function startGame() {
+    resetCanvas();
+    gameover = false;
+    
+    // Reset UI
+    doneTextElement.className = 'doneText';
+    triesElement.innerHTML = 'Tries: 0';
+
+    // Update game parameters
+    bounce = bounceRange.value / 100;
+    gravity = gravityRange.value / 100;
+    
+    // Create new game instance
+    game = new Game(NUM_OBSTACLES);
+
+    // Cancel existing animation before starting new one
+    if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+    }
+
+    // Start game loop
+    function gameLoop() {
+        if (!gameover) {
+            updateCanvas(game);
+            animationFrame = requestAnimationFrame(gameLoop);
+        }
+    }
+    animationFrame = requestAnimationFrame(gameLoop);
+
+    // Set up event listeners
+    setupEventListeners();
+}
+
+function setupEventListeners() {
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('click', handleClick);
+}
+
+function handleMouseMove(e) {
+    const rect = e.target.getBoundingClientRect();
+    mousePosition.x = e.clientX - rect.left;
+    mousePosition.y = e.clientY - rect.top;
+}
+
+function handleClick(e) {
+    if (gameover || !game.gameball.shootable) return;
+
+    const rect = e.target.getBoundingClientRect();
+    mousePosition.x = e.clientX - rect.left;
+    mousePosition.y = e.clientY - rect.top;
+
+    game.gameball.shootable = false;
+    game.gameball.speed.x = (mousePosition.x - (width / 2)) / SHOOT_SPEED_DIVISOR;
+    game.gameball.speed.y = (mousePosition.y - 20) / SHOOT_SPEED_DIVISOR;
+    
+    triesElement.innerText = `Tries: ${++game.tries}`;
+}
+
+// Initialize the game
+startGame();
