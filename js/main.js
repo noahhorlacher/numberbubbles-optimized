@@ -11,9 +11,10 @@ const CONFIG = {
         NUM_OBSTACLES: 15,
         SHOOT_SPEED_DIVISOR: 10,
         MIN_OBSTACLE_RADIUS: 20,
+        MAX_OBSTACLE_RADIUS: 50,
         DEFAULT_GRAVITY: 0.2,
         DEFAULT_BOUNCE: 0.8,
-        OBSTACLE_PADDING: 10,
+        OBSTACLE_PADDING: 5,
         MAX_PLACEMENT_ATTEMPTS: 100
     }
 };
@@ -250,15 +251,15 @@ class Obstacle {
         if (this.number <= 0) return;
 
         const { context } = this.engine;
-        const colorStr = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
+        const obstacleColor = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
 
         context.beginPath();
         context.lineWidth = 2;
-        context.strokeStyle = colorStr;
+        context.fillStyle = obstacleColor;
         context.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
-        context.stroke();
+        context.fill();
 
-        context.fillStyle = colorStr;
+        context.fillStyle = '#ffffff';
         context.font = `${this.radius/2}px Arial`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -339,7 +340,7 @@ class Game {
                 b: Math.floor(Math.random() * 200 + 55)
             };
 
-            const maxRadius = Math.min(50, (CONFIG.CANVAS.WIDTH - 2 * CONFIG.GAME.MIN_OBSTACLE_RADIUS) / 
+            const maxRadius = Math.min(CONFIG.GAME.MAX_OBSTACLE_RADIUS, (CONFIG.CANVAS.WIDTH - 2 * CONFIG.GAME.MIN_OBSTACLE_RADIUS) / 
                                          (Math.sqrt(CONFIG.GAME.NUM_OBSTACLES) * 2));
             const radius = CONFIG.GAME.MIN_OBSTACLE_RADIUS + Math.random() * (maxRadius - CONFIG.GAME.MIN_OBSTACLE_RADIUS);
 
