@@ -13,6 +13,8 @@ const CONFIG = {
         SHOOT_SPEED_DIVISOR: 10,
         MIN_OBSTACLE_RADIUS: 20,
         MAX_OBSTACLE_RADIUS: 50,
+        MIN_OBSTACLE_COLOR: 55,
+        MAX_OBSTACLE_COLOR: 180,
         DEFAULT_GRAVITY: 0.2,
         DEFAULT_BOUNCE: 0.8,
         OBSTACLE_PADDING: 5,
@@ -336,9 +338,9 @@ class Game {
     createSingleObstacle() {
         for (let attempt = 0; attempt < CONFIG.GAME.MAX_PLACEMENT_ATTEMPTS; attempt++) {
             const color = {
-                r: Math.floor(Math.random() * 200 + 55),
-                g: Math.floor(Math.random() * 200 + 55),
-                b: Math.floor(Math.random() * 200 + 55)
+                r: Math.floor(Math.random() * (CONFIG.GAME.MAX_OBSTACLE_COLOR - CONFIG.GAME.MIN_OBSTACLE_COLOR) + CONFIG.GAME.MIN_OBSTACLE_COLOR),
+                g: Math.floor(Math.random() * (CONFIG.GAME.MAX_OBSTACLE_COLOR - CONFIG.GAME.MIN_OBSTACLE_COLOR) + CONFIG.GAME.MIN_OBSTACLE_COLOR),
+                b: Math.floor(Math.random() * (CONFIG.GAME.MAX_OBSTACLE_COLOR - CONFIG.GAME.MIN_OBSTACLE_COLOR) + CONFIG.GAME.MIN_OBSTACLE_COLOR)
             };
 
             const maxRadius = Math.min(CONFIG.GAME.MAX_OBSTACLE_RADIUS, (CONFIG.CANVAS.WIDTH - 2 * CONFIG.GAME.MIN_OBSTACLE_RADIUS) / 
