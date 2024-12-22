@@ -18,7 +18,8 @@ const CONFIG = {
         DEFAULT_GRAVITY: 0.2,
         DEFAULT_BOUNCE: 0.8,
         OBSTACLE_PADDING: 5,
-        MAX_PLACEMENT_ATTEMPTS: 100
+        MAX_PLACEMENT_ATTEMPTS: 100,
+        MAX_SPEED: 25
     }
 }
 
@@ -228,6 +229,14 @@ class Ball {
         this.position.x += this.speed.x
         this.position.y += this.speed.y
         this.speed.y += this.engine.physics.gravity
+        
+        // Limit maximum speed
+        const currentSpeed = Math.sqrt(this.speed.x * this.speed.x + this.speed.y * this.speed.y)
+        if (currentSpeed > CONFIG.GAME.MAX_SPEED) {
+            const scale = CONFIG.GAME.MAX_SPEED / currentSpeed
+            this.speed.x *= scale
+            this.speed.y *= scale
+        }
     }
 
     handleBoundaries() {
