@@ -64,6 +64,19 @@ class GameEngine {
         this.ui.resetButton.addEventListener('click', () => this.startGame());
         this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         this.canvas.addEventListener('click', (e) => this.handleClick(e));
+        this.ui.bounce.range.addEventListener('change', () => {
+            this.ui.bounce.value.innerText = `${this.ui.bounce.range.value}%`;
+            CONFIG.GAME.DEFAULT_BOUNCE = this.ui.bounce.range.value
+
+            this.physics.gravity = CONFIG.GAME.DEFAULT_GRAVITY
+        })
+
+        this.ui.gravity.range.addEventListener('change', () => {
+            this.ui.gravity.value.innerText = `${this.ui.gravity.range.value}%`;
+            CONFIG.GAME.DEFAULT_GRAVITY = this.ui.gravity.range.value
+
+            this.physics.bounce = CONFIG.GAME.DEFAULT_BOUNCE
+        })
     }
 
     startGame() {
