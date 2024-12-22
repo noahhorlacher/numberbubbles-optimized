@@ -6,6 +6,7 @@ const CONFIG = {
         HEIGHT: document.querySelector('#gameCanvas').getAttribute('height')
     },
     GAME: {
+        BALL_COLOR: '#ffffff',
         BALL_RADIUS: 20,
         BORDER_LIMIT: 620,
         NUM_OBSTACLES: 15,
@@ -189,7 +190,7 @@ class Ball {
     draw() {
         const { context } = this.engine;
         context.beginPath();
-        context.fillStyle = "cadetblue";
+        context.fillStyle = CONFIG.GAME.BALL_COLOR;
         context.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
         context.fill();
         this.update();
@@ -260,7 +261,7 @@ class Obstacle {
         context.fill();
 
         context.fillStyle = '#ffffff';
-        context.font = `${this.radius/2}px Arial`;
+        context.font = `bold ${this.radius/2}px Courier`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillText(this.number.toString(), this.position.x, this.position.y);
